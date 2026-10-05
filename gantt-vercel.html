@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Project Gantt (editable)</title>
+<style>
+:root{--bg:#f6f7f9;--panel:#fff;--ink:#1b2430;--mute:#6b7683;--line:#dfe3e8;--dl:#d1392c;--bt:#fff;--acc:#1b2430;--acct:#fff;
+--p1:#c98a0b;--p2:#2c6fd1;--p3:#1f9d6b;--p4:#8a4fd1;--p5:#d1476f;--p6:#1a8fa3}
+@media (prefers-color-scheme:dark){:root{--bg:#12161c;--panel:#1a2029;--ink:#e7ebf0;--mute:#93a0ae;--line:#2b3440;--dl:#ff6b5e;--bt:#10151b;--acc:#e7ebf0;--acct:#12161c;
+--p1:#e3a62f;--p2:#5b95ea;--p3:#3cc08c;--p4:#b58af0;--p5:#f07a9c;--p6:#4cc3d6}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.45 "Trebuchet MS","Segoe UI",Helvetica,Arial,sans-serif}
+main{max-width:1200px;margin:0 auto;padding:0 16px 40px}
+.bar-top{position:sticky;top:0;z-index:20;background:var(--bg);border-bottom:1px solid var(--line);padding:10px 0;margin:0 0 18px;display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+button{font:inherit;font-size:14px;padding:7px 13px;border-radius:7px;border:1px solid var(--line);background:var(--panel);color:var(--ink);cursor:pointer}
+button:hover{border-color:var(--mute)}
+button.pri{background:var(--acc);color:var(--acct);border-color:var(--acc)}
+button.danger{color:var(--dl)}
+button:disabled{opacity:.5;cursor:default}
+#status{margin-left:auto;font-size:12.5px;color:var(--mute)}
+.readonly-note{background:var(--panel);border:1px solid var(--line);border-left:4px solid var(--mute);border-radius:6px;padding:8px 12px;font-size:13px;color:var(--mute);margin:0 0 14px}
+h1{font-size:30px;margin:0 0 4px;letter-spacing:-.01em}
+.sub{color:var(--mute);margin:0 0 18px;max-width:70ch}
+.sec{font-size:18px;margin:0 0 10px}
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:12px;margin:0 0 26px}
+.card{background:var(--panel);border:1px solid var(--line);border-top:5px solid var(--c);border-radius:8px;padding:14px 16px}
+.card h3{margin:0 0 4px;font-size:16px;color:var(--c)}
+.card p{margin:6px 0;font-size:14px}
+.card .st{font-weight:700;font-size:13px;color:var(--mute)}
+.card .ask{padding-top:8px;border-top:1px solid var(--line)}
+.legend{display:flex;flex-wrap:wrap;gap:16px;margin:0 0 12px;color:var(--mute);font-size:13px}
+.legend span{display:flex;align-items:center;gap:6px}
+.sw{width:26px;height:10px;border-radius:3px;background:var(--mute)}
+.sw.src{background:repeating-linear-gradient(45deg,var(--mute) 0 3px,transparent 3px 6px);border:1px solid var(--mute)}
+.wrap{background:var(--panel);border:1px solid var(--line);border-radius:10px;overflow-x:auto}
+.row{display:grid;grid-template-columns:230px 1fr;border-bottom:1px solid var(--line);min-height:34px}
+.row:last-child{border-bottom:0}
+.lab{padding:7px 12px;font-size:13.5px;display:flex;align-items:center;border-right:1px solid var(--line);position:sticky;left:0;background:var(--panel);z-index:3}
+.grp,.grp .lab{background:color-mix(in srgb,var(--c) 9%,var(--panel))}
+.grp .lab{font-weight:700;font-size:14px;color:var(--c);padding-top:12px;padding-bottom:12px}
+.track{position:relative}
+.wk{position:absolute;top:0;bottom:0;border-left:1px solid var(--line);opacity:.6}
+.bar{position:absolute;top:7px;height:20px;border-radius:4px;background:var(--c);font-size:11px;color:var(--bt);padding:2px 6px;white-space:nowrap;overflow:hidden;z-index:1}
+.bar.buf{background:repeating-linear-gradient(90deg,color-mix(in srgb,var(--mute) 35%,transparent) 0 3px,transparent 3px 7px);border:1px dashed var(--mute);color:var(--ink)}
+.bar.src{background:repeating-linear-gradient(45deg,color-mix(in srgb,var(--c) 30%,transparent) 0 4px,color-mix(in srgb,var(--c) 12%,transparent) 4px 8px);border:1px solid var(--c);color:var(--ink)}
+.head .lab{color:var(--mute);font-size:12px}
+.mon{position:absolute;top:0;bottom:0;padding:6px 8px;font-weight:700;font-size:13px;border-left:1px solid var(--line)}
+.wl{position:absolute;top:0;bottom:0;font-size:10.5px;color:var(--mute);padding:8px 0 0 3px;border-left:1px solid var(--line)}
+.head.h1{min-height:30px}.head.h2{min-height:32px}
+.dl{position:absolute;top:0;bottom:0;border-left:2px dashed var(--dl);z-index:2}
+.dllab{position:absolute;top:2px;font-size:11px;color:var(--dl);font-weight:700;white-space:nowrap;z-index:4;background:var(--panel);padding:0 3px;transform:translateX(-100%)}
+#editor{display:none;margin-top:26px}
+body.editing #editor{display:block}
+fieldset{background:var(--panel);border:1px solid var(--line);border-left:5px solid var(--c);border-radius:8px;margin:0 0 14px;padding:12px 14px}
+legend{font-weight:700;color:var(--c);padding:0 6px}
+label{display:block;font-size:12.5px;color:var(--mute);margin:0 0 8px}
+input,select,textarea{font:inherit;font-size:14px;width:100%;padding:6px 8px;border:1px solid var(--line);border-radius:6px;background:var(--bg);color:var(--ink)}
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.meta{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:12px 14px;margin:0 0 14px}
+.tw{overflow-x:auto;margin:6px 0 10px}
+table{border-collapse:collapse;min-width:640px;width:100%}
+td{padding:3px 4px 3px 0}
+td:nth-child(2),td:nth-child(3){width:150px}td:nth-child(4){width:105px}td:nth-child(5){width:120px}td:nth-child(6){width:44px}
+.edt th{font-size:12px;color:var(--mute);text-align:left;font-weight:400;padding:0 4px 2px 0}
+.bt{min-width:0;font-size:13.5px}.bt th,.bt td{padding:8px 10px;border-bottom:1px solid var(--line);text-align:right;white-space:nowrap;width:auto}
+.bt thead th{color:var(--mute);font-size:12px;font-weight:400}
+.bt .rl{text-align:left;position:sticky;left:0;background:var(--panel);font-weight:400;min-width:200px}
+.bt .pr .rl{color:var(--c);font-weight:700}.bt .tk .rl{padding-left:26px}.bt .tk td{color:var(--mute)}
+.bt .tot{font-weight:700;color:var(--ink)}.bt .gt th,.bt .gt td{font-weight:700;background:color-mix(in srgb,var(--mute) 12%,var(--panel));border-bottom:0}
+details{margin-top:12px}summary{cursor:pointer;color:var(--mute);font-size:14px;margin-bottom:8px}
+@media (max-width:640px){.g2{grid-template-columns:1fr}}
+@media print{@page{size:landscape;margin:10mm}body{background:#fff}.bar-top,#editor{display:none!important}.wrap{overflow:visible}.card,.wrap{break-inside:avoid}}
+</style>
+</head>
+<body>
+<main>
+<div class="bar-top">
+<button class="pri" id="bEdit">Edit</button>
+<button id="bAdd">+ Add project</button>
+<button class="pri" id="bPublish">Save for everyone</button>
+<button id="bSave">Download copy</button>
+<button id="bReset" class="danger">Reset</button>
+<span id="status"></span>
+</div>
+<p class="readonly-note">Anyone with this link can edit and save changes for everyone. If you don't want that, add a login or access check in front of this page.</p>
+<h1 id="ttl"></h1>
+<p class="sub" id="sub"></p>
+<div class="cards" id="cards"></div>
+<h2 class="sec">Timeline</h2>
+<div class="legend"><span><i class="sw src"></i>Sourcing / quotes</span><span><i class="sw"></i>Work on site</span><span><i class="sw" style="background:none;border:1px dashed var(--mute)"></i>Buffer</span><span><i class="sw" style="background:none;border-left:2px dashed var(--dl);width:0;height:12px;border-radius:0"></i>Deadline</span></div>
+<div class="wrap"><div id="chart"></div></div>
+<h2 class="sec" style="margin-top:28px">Budget by month</h2>
+<div id="budget"></div>
+<div id="editor"></div>
+</main>
+<script id="data" type="application/json">{"title": "Facility projects: delivery plan", "subtitle": "LED lighting and solar film fit before 31 December. Parking solar, with the new durations, finishes in late February.", "deadline": "2026-12-31", "currency": "$", "projects": [{"name": "Solar panels: outside parking", "status": "Sourcing", "text": "Sourcing 1 month, excavation 2 months, solar installation 8 weeks, one after another.", "ask": "Select supplier and contractor by 28 Oct, or the finish moves later than 22 Feb.", "tasks": [{"name": "Sourcing (1 month)", "start": "2026-09-28", "end": "2026-10-28", "type": "src"}, {"name": "Excavate parking (2 months)", "start": "2026-10-29", "end": "2026-12-28", "type": "w", "budget": "40000"}, {"name": "Solar installation (8 weeks)", "start": "2026-12-29", "end": "2027-02-22", "type": "w", "budget": "200000"}]}, {"name": "Solar film placement", "status": "Sourcing, 2 film options", "text": "Each floor takes 1 day, with a 10-day buffer for the whole project.", "ask": "Choose between the two films by 16 Oct.", "tasks": [{"name": "Sourcing: choose between 2 films", "start": "2026-09-28", "end": "2026-10-16", "type": "src"}, {"name": "Order and delivery", "start": "2026-10-12", "end": "2026-10-23", "type": "src", "budget": "12000"}, {"name": "3rd floor (1 day)", "start": "2026-10-26", "end": "2026-10-26", "type": "w"}, {"name": "4th floor (1 day)", "start": "2026-10-27", "end": "2026-10-27", "type": "w"}, {"name": "5th floor, first half (1 day)", "start": "2026-10-28", "end": "2026-10-28", "type": "w"}, {"name": "5th floor, second half (1 day)", "start": "2026-10-29", "end": "2026-10-29", "type": "w"}, {"name": "Buffer (10 days)", "start": "2026-10-30", "end": "2026-11-08", "type": "buf"}]}, {"name": "LED lighting: whole building", "status": "Quotations only", "text": "Seven zones, one week each, with a 3-day buffer before the first zone and after the last. Parking first, then RC, then the rest.", "ask": "Approve quote and start material sourcing by 9 Oct.", "tasks": [{"name": "Quotations (in progress)", "start": "2026-09-28", "end": "2026-10-09", "type": "src"}, {"name": "Material sourcing", "start": "2026-10-12", "end": "2026-10-30", "type": "src", "budget": "20000"}, {"name": "Buffer (3 days)", "start": "2026-10-31", "end": "2026-11-02", "type": "buf"}, {"name": "Parking", "start": "2026-11-03", "end": "2026-11-07", "type": "w"}, {"name": "RC", "start": "2026-11-08", "end": "2026-11-12", "type": "w"}, {"name": "3M", "start": "2026-11-13", "end": "2026-11-17", "type": "w"}, {"name": "4th floor", "start": "2026-11-18", "end": "2026-11-22", "type": "w"}, {"name": "5th floor", "start": "2026-11-23", "end": "2026-11-27", "type": "w"}, {"name": "6th floor", "start": "2026-11-28", "end": "2026-12-02", "type": "w"}, {"name": "D1", "start": "2026-12-03", "end": "2026-12-07", "type": "w"}, {"name": "D2", "start": "2026-12-08", "end": "2026-12-12", "type": "w"}, {"name": "Buffer (3 days)", "start": "2026-12-13", "end": "2026-12-15", "type": "buf"}]}]}</script>
+<script>
+const $=id=>document.getElementById(id),DAY=864e5;
+const embedded=document.getElementById("data").textContent.trim();
+const esc=s=>String(s??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const pd=s=>Date.parse(s+"T00:00:00Z");
+const iso=t=>new Date(t).toISOString().slice(0,10);
+const fmt=t=>new Date(t).toLocaleDateString("en-GB",{day:"numeric",month:"short",timeZone:"UTC"});
+let D=JSON.parse(embedded);
+let dirty=false;
+function serializeDoc(){
+const c=document.documentElement.cloneNode(true);
+c.querySelector("#data").textContent=JSON.stringify(D).replace(/</g,"\\u003c");
+["chart","cards","editor","status","ttl","sub"].forEach(id=>c.querySelector("#"+id).innerHTML="");
+c.querySelector("body").className="";c.querySelector("#bEdit").textContent="Edit";
+return "<!DOCTYPE html>\n"+c.outerHTML}
+async function loadShared(quiet){
+try{
+const r=await fetch("/api/gantt");
+if(!r.ok)throw 0;
+const j=await r.json();
+if(j.data){
+const incoming=JSON.stringify(j.data);
+if(incoming!==JSON.stringify(D)){D=j.data;render();if(document.body.classList.contains("editing"))renderEditor()}
+}
+if(!quiet)$("status").textContent=""
+}catch(e){if(!quiet)$("status").textContent="Couldn't reach the server — showing the built-in version. Changes will only download, not save for everyone."}}
+async function publishAll(){
+$("bPublish").disabled=true;$("status").textContent="Saving for everyone…";
+try{
+const r=await fetch("/api/gantt",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(D)});
+if(!r.ok)throw 0;
+dirty=false;$("status").textContent="Saved. Everyone who opens or refreshes this page will see it."
+}catch(e){$("status").textContent="Couldn't save to the server. Try again, or use Download copy."}
+$("bPublish").disabled=false}
+function markDirty(){dirty=true;$("status").textContent="Unsaved changes — click \u201cSave for everyone\u201d to publish them."}
+const bsum=p=>p.tasks.reduce((x,t)=>x+(+t.budget||0),0);
+function render(){
+const P=D.projects;
+$("ttl").textContent=D.title;$("sub").textContent=D.subtitle;
+$("cards").innerHTML=P.map((p,i)=>`<div class="card" style="--c:var(--p${i%6+1})"><h3>${esc(p.name)}</h3><p class="st">${esc(p.status)}</p><p>${esc(p.text)}</p>${p.ask?`<p class="ask"><b>Decision:</b> ${esc(p.ask)}</p>`:""}${bsum(p)?`<p><b>Budget:</b> ${D.currency||""}${Math.round(bsum(p)).toLocaleString("en-US")}</p>`:""}</div>`).join("");
+let mn=Infinity,mx=-Infinity;
+P.forEach(p=>p.tasks.forEach(t=>{const a=pd(t.start),b=pd(t.end);if(!isNaN(a)&&!isNaN(b)){mn=Math.min(mn,a);mx=Math.max(mx,b)}}));
+const dl=D.deadline&&!isNaN(pd(D.deadline))?pd(D.deadline):null;
+if(dl!==null)mx=Math.max(mx,dl);
+if(mn===Infinity){mn=Date.now();mx=mn+56*DAY}
+const S=mn-((new Date(mn).getUTCDay()+6)%7)*DAY;
+const weeks=Math.max(8,Math.ceil((mx+DAY-S)/(7*DAY)));
+const E=S+weeks*7*DAY,T=E-S,pct=t=>(t-S)/T*100;
+$("chart").style.minWidth=Math.max(900,weeks*68+230)+"px";
+let wk="",wh="",mh="";
+for(let t=S;t<E;t+=7*DAY){wk+=`<div class="wk" style="left:${pct(t)}%"></div>`;wh+=`<div class="wl" style="left:${pct(t)}%;width:${700*DAY/T}%">${fmt(t)}</div>`}
+const s0=new Date(S);let m=Date.UTC(s0.getUTCFullYear(),s0.getUTCMonth(),1);
+while(m<E){const d=new Date(m),nm=Date.UTC(d.getUTCFullYear(),d.getUTCMonth()+1,1);
+if(m<S&&nm-S<14*DAY){m=nm;continue}
+mh+=`<div class="mon" style="left:${Math.max(0,pct(m))}%;${m<S?"border:0":""}">${d.toLocaleDateString("en-GB",{month:"short",year:"numeric",timeZone:"UTC"})}</div>`;m=nm}
+const dlEnd=dl!==null?dl+DAY:null;
+const tr=inner=>`<div class="track">${wk}${inner}${dlEnd!==null?`<div class="dl" style="left:${pct(dlEnd)}%"></div>`:""}</div>`;
+let h=`<div class="row head h1"><div class="lab">Month</div><div class="track">${mh}${dlEnd!==null?`<div class="dllab" style="left:${pct(dlEnd)}%">Deadline ${fmt(dl)}</div>`:""}</div></div><div class="row head h2"><div class="lab">Week starting</div><div class="track">${wh}</div></div>`;
+P.forEach((p,i)=>{const c=`var(--p${i%6+1})`;
+h+=`<div class="row grp" style="--c:${c}"><div class="lab">${esc(p.name)}</div>${tr("")}</div>`;
+p.tasks.forEach(t=>{const a=pd(t.start),b=pd(t.end)+DAY;
+const bar=isNaN(a)||isNaN(b)||b<=a?"":`<div class="bar ${t.type==="w"?"":esc(t.type)}" style="left:${pct(a)}%;width:${(b-a)/T*100}%">${fmt(a)} – ${fmt(b-DAY)}</div>`;
+h+=`<div class="row" style="--c:${c}"><div class="lab">${esc(t.name)}</div>${tr(bar)}</div>`})});
+$("chart").innerHTML=h;renderBudget(S,E)}
+
+function renderBudget(S,E){
+const cur=D.currency||"",P=D.projects,months=[];
+let d0=new Date(S),m=Date.UTC(d0.getUTCFullYear(),d0.getUTCMonth(),1);
+while(m<E){months.push(m);const d=new Date(m);m=Date.UTC(d.getUTCFullYear(),d.getUTCMonth()+1,1)}
+const key=t=>{const d=new Date(t);return d.getUTCFullYear()*12+d.getUTCMonth()};
+const alloc=t=>{const r={},b=+t.budget||0,a=pd(t.start),e=pd(t.end);if(!b||isNaN(a)||isNaN(e)||e<a)return r;
+const n=Math.round((e-a)/DAY)+1;for(let i=0;i<n;i++){const k=key(a+i*DAY);r[k]=(r[k]||0)+b/n}return r};
+const f=v=>v>0?cur+Math.round(v).toLocaleString("en-US"):"–";
+const add=(a,b)=>{for(const k in b)a[k]=(a[k]||0)+b[k]};
+const grand=P.reduce((x,p)=>x+bsum(p),0);
+if(!grand){$("budget").innerHTML='<p class="sub">No budget entered yet. Click Edit and fill in the Budget field on each task.</p>';return}
+const head='<thead><tr><th class="rl">&nbsp;</th>'+months.map(m=>`<th>${new Date(m).toLocaleDateString("en-GB",{month:"short",year:"2-digit",timeZone:"UTC"})}</th>`).join("")+'<th>Total</th></tr></thead>';
+const row=(label,map,tot,cls,c)=>`<tr class="${cls}" style="--c:${c}"><th class="rl">${esc(label)}</th>${months.map(x=>`<td>${f(map[key(x)])}</td>`).join("")}<td class="tot">${f(tot)}</td></tr>`;
+let sum="",det="",all={};
+P.forEach((p,i)=>{const c=`var(--p${i%6+1})`,pm={};let tk="";
+p.tasks.forEach(t=>{const a=alloc(t);add(pm,a);tk+=row(t.name,a,+t.budget||0,"tk",c)});
+add(all,pm);const pr=row(p.name,pm,bsum(p),"pr",c);sum+=pr;det+=pr+tk});
+sum+=row("Total, all projects",all,grand,"gt","var(--ink)");
+$("budget").innerHTML=`<div class="wrap"><table class="bt">${head}<tbody>${sum}</tbody></table></div><details><summary>Show breakdown by task</summary><div class="wrap"><table class="bt">${head}<tbody>${det}</tbody></table></div></details><p class="sub" style="margin-top:8px;font-size:12.5px">Each task budget is spread evenly across its calendar days, then added up per month. Figures are rounded.</p>`}
+function renderEditor(){
+let h=`<h2 class="sec">Edit</h2><div class="meta"><label>Page title<input data-k="title" value="${esc(D.title)}"></label><label>Subtitle<input data-k="subtitle" value="${esc(D.subtitle)}"></label><label>Currency symbol<input data-k="currency" value="${esc(D.currency||"")}"></label><label>Overall deadline (leave empty for none)<input type="date" data-k="deadline" value="${esc(D.deadline||"")}"></label></div>`;
+D.projects.forEach((p,i)=>{
+h+=`<fieldset style="--c:var(--p${i%6+1})"><legend>Project ${i+1}</legend><div class="g2"><label>Name<input data-p="${i}" data-k="name" value="${esc(p.name)}"></label><label>Status<input data-p="${i}" data-k="status" value="${esc(p.status)}"></label></div><label>Description<input data-p="${i}" data-k="text" value="${esc(p.text)}"></label><label>Decision needed<input data-p="${i}" data-k="ask" value="${esc(p.ask)}"></label><div class="tw"><table class="edt"><tr><th>Task</th><th>Start</th><th>End</th><th>Type</th><th>Budget</th><th></th></tr>`;
+p.tasks.forEach((t,j)=>{const a=`data-p="${i}" data-t="${j}"`;
+h+=`<tr><td><input ${a} data-k="name" value="${esc(t.name)}" placeholder="Task"></td><td><input type="date" ${a} data-k="start" value="${esc(t.start)}"></td><td><input type="date" ${a} data-k="end" value="${esc(t.end)}"></td><td><select ${a} data-k="type"><option value="w"${t.type==="w"?" selected":""}>Work</option><option value="src"${t.type==="src"?" selected":""}>Sourcing</option><option value="buf"${t.type==="buf"?" selected":""}>Buffer</option></select></td><td><input type="number" min="0" step="any" ${a} data-k="budget" value="${esc(t.budget||"")}" placeholder="0"></td><td><button class="danger" data-act="delTask" ${a} title="Delete task">✕</button></td></tr>`});
+h+=`</table></div><button data-act="addTask" data-p="${i}">+ Add task</button> <button class="danger" data-act="delProj" data-p="${i}">Delete project</button></fieldset>`});
+$("editor").innerHTML=h+`<button class="pri" data-act="addProj">+ Add project</button>`}
+function newTask(p){const l=p.tasks[p.tasks.length-1];const s=l&&!isNaN(pd(l.end))?pd(l.end)+DAY:Date.now();return{name:"New task",start:iso(s),end:iso(s+6*DAY),type:"w",budget:0}}
+function change(){render();markDirty()}
+$("editor").addEventListener("input",e=>{const d=e.target.dataset;if(!d.k)return;
+if(d.t!==undefined)D.projects[+d.p].tasks[+d.t][d.k]=e.target.value;
+else if(d.p!==undefined)D.projects[+d.p][d.k]=e.target.value;else D[d.k]=e.target.value;change()});
+$("editor").addEventListener("click",e=>{const b=e.target.closest("[data-act]");if(!b)return;const d=b.dataset,p=D.projects[+d.p];
+if(d.act==="addTask")p.tasks.push(newTask(p));
+if(d.act==="delTask")p.tasks.splice(+d.t,1);
+if(d.act==="delProj"){if(!confirm("Delete this project and all its tasks?"))return;D.projects.splice(+d.p,1)}
+if(d.act==="addProj")addProject();
+renderEditor();change()});
+function addProject(){const p={name:"New project",status:"Not started",text:"",ask:"",tasks:[]};p.tasks.push(newTask(p));D.projects.push(p)}
+$("bEdit").onclick=()=>{const on=document.body.classList.toggle("editing");$("bEdit").textContent=on?"Done editing":"Edit";if(on)renderEditor()};
+$("bAdd").onclick=()=>{addProject();document.body.classList.add("editing");$("bEdit").textContent="Done editing";renderEditor();change();
+const f=document.querySelectorAll("#editor fieldset");f[f.length-1].scrollIntoView({behavior:"smooth"})};
+$("bPublish").onclick=publishAll;
+$("bSave").onclick=()=>{const blob=new Blob([serializeDoc()],{type:"text/html"});
+const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download="gantt-editable.html";document.body.appendChild(a);a.click();a.remove();
+$("status").textContent="Downloaded a personal copy. It won't affect the shared page."};
+$("bReset").onclick=()=>{if(!confirm("Discard your unsaved edits and go back to the last saved version?"))return;
+D=JSON.parse(embedded);render();if(document.body.classList.contains("editing"))renderEditor();dirty=false;$("status").textContent="Reverted to the last saved version."};
+render();
+loadShared(false);
+setInterval(()=>{if(!document.body.classList.contains("editing"))loadShared(true)},15000);
+</script>
+</body>
+</html>
