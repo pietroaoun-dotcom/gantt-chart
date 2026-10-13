@@ -145,6 +145,7 @@ main{max-width:1680px;margin:0 auto;padding:22px 20px 40px}
 .h{position:absolute;top:0;bottom:0;width:8px;cursor:ew-resize;z-index:3}.h-l{left:-2px}.h-r{right:-2px}
 .bar.sum{top:14px;height:12px;border-radius:3px;padding:0;background:color-mix(in srgb,var(--c) 28%,var(--panel));box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--c) 55%,transparent)}
 .bar.sum .pg{background:var(--c);border-radius:3px 0 0 3px}
+.pdl{position:absolute;top:4px;bottom:4px;border-left:2px dashed var(--dl);z-index:3}
 .sum-l{position:absolute;top:12px;font-size:11.5px;font-weight:700;color:color-mix(in srgb,var(--c) 75%,var(--ink));white-space:nowrap;pointer-events:none;z-index:2}
 .ms{position:absolute;top:9px;width:0;height:18px;z-index:2;cursor:grab;touch-action:none;user-select:none}
 .ms i{position:absolute;left:-8px;top:1px;width:16px;height:16px;background:var(--c);border-radius:3px;transform:rotate(45deg) scale(.82);box-shadow:0 0 0 2px var(--panel)}
@@ -319,7 +320,7 @@ dialog h3{margin:0;font-size:18px}
 <input type="file" id="fImport" accept=".json,application/json" hidden>
 <datalist id="stList"><option>Not started</option><option>Quotations</option><option>Sourcing</option><option>In progress</option><option>On hold</option><option>At risk</option><option>Delayed</option><option>Done</option></datalist>
 
-<script id="data" type="application/json">{"title": "Facility projects: delivery plan", "subtitle": "LED lighting and solar film fit before 31 December. Parking solar, with the new durations, finishes in late February.", "deadline": "2026-12-31", "currency": "$", "projects": [{"name": "Solar panels: outside parking", "status": "Sourcing", "text": "Sourcing 1 month, excavation 2 months, solar installation 8 weeks, one after another.", "ask": "Select supplier and contractor by 28 Oct, or the finish moves later than 22 Feb.", "tasks": [{"name": "Sourcing (1 month)", "start": "2026-09-28", "end": "2026-10-28", "type": "src"}, {"name": "Excavate parking (2 months)", "start": "2026-10-29", "end": "2026-12-28", "type": "w", "budget": "40000"}, {"name": "Solar installation (8 weeks)", "start": "2026-12-29", "end": "2027-02-22", "type": "w", "budget": "200000"}]}, {"name": "Solar film placement", "status": "Sourcing, 2 film options", "text": "Each floor takes 1 day, with a 10-day buffer for the whole project.", "ask": "Choose between the two films by 16 Oct.", "tasks": [{"name": "Sourcing: choose between 2 films", "start": "2026-09-28", "end": "2026-10-16", "type": "src"}, {"name": "Order and delivery", "start": "2026-10-12", "end": "2026-10-23", "type": "src", "budget": "12000"}, {"name": "3rd floor (1 day)", "start": "2026-10-26", "end": "2026-10-26", "type": "w"}, {"name": "4th floor (1 day)", "start": "2026-10-27", "end": "2026-10-27", "type": "w"}, {"name": "5th floor, first half (1 day)", "start": "2026-10-28", "end": "2026-10-28", "type": "w"}, {"name": "5th floor, second half (1 day)", "start": "2026-10-29", "end": "2026-10-29", "type": "w"}, {"name": "Buffer (10 days)", "start": "2026-10-30", "end": "2026-11-08", "type": "buf"}]}, {"name": "LED lighting: whole building", "status": "Quotations only", "text": "Seven zones, one week each, with a 3-day buffer before the first zone and after the last. Parking first, then RC, then the rest.", "ask": "Approve quote and start material sourcing by 9 Oct.", "tasks": [{"name": "Quotations (in progress)", "start": "2026-09-28", "end": "2026-10-09", "type": "src"}, {"name": "Material sourcing", "start": "2026-10-12", "end": "2026-10-30", "type": "src", "budget": "20000"}, {"name": "Buffer (3 days)", "start": "2026-10-31", "end": "2026-11-02", "type": "buf"}, {"name": "Parking", "start": "2026-11-03", "end": "2026-11-07", "type": "w"}, {"name": "RC", "start": "2026-11-08", "end": "2026-11-12", "type": "w"}, {"name": "3M", "start": "2026-11-13", "end": "2026-11-17", "type": "w"}, {"name": "4th floor", "start": "2026-11-18", "end": "2026-11-22", "type": "w"}, {"name": "5th floor", "start": "2026-11-23", "end": "2026-11-27", "type": "w"}, {"name": "6th floor", "start": "2026-11-28", "end": "2026-12-02", "type": "w"}, {"name": "D1", "start": "2026-12-03", "end": "2026-12-07", "type": "w"}, {"name": "D2", "start": "2026-12-08", "end": "2026-12-12", "type": "w"}, {"name": "Buffer (3 days)", "start": "2026-12-13", "end": "2026-12-15", "type": "buf"}]}]}</script>
+<script id="data" type="application/json">{"title": "Facility projects: delivery plan", "subtitle": "LED lighting and solar film fit before 31 December. Parking solar, with the new durations, finishes in late February.", "deadline": "2026-12-31", "currency": "$", "projects": [{"name": "Solar panels: outside parking", "deadline": "2027-03-31", "status": "Sourcing", "text": "Sourcing 1 month, excavation 2 months, solar installation 8 weeks, one after another.", "ask": "Select supplier and contractor by 28 Oct, or the finish moves later than 22 Feb.", "tasks": [{"name": "Sourcing (1 month)", "start": "2026-09-28", "end": "2026-10-28", "type": "src"}, {"name": "Excavate parking (2 months)", "start": "2026-10-29", "end": "2026-12-28", "type": "w", "budget": "40000"}, {"name": "Solar installation (8 weeks)", "start": "2026-12-29", "end": "2027-02-22", "type": "w", "budget": "200000"}]}, {"name": "Solar film placement", "status": "Sourcing, 2 film options", "text": "Each floor takes 1 day, with a 10-day buffer for the whole project.", "ask": "Choose between the two films by 16 Oct.", "tasks": [{"name": "Sourcing: choose between 2 films", "start": "2026-09-28", "end": "2026-10-16", "type": "src"}, {"name": "Order and delivery", "start": "2026-10-12", "end": "2026-10-23", "type": "src", "budget": "12000"}, {"name": "3rd floor (1 day)", "start": "2026-10-26", "end": "2026-10-26", "type": "w"}, {"name": "4th floor (1 day)", "start": "2026-10-27", "end": "2026-10-27", "type": "w"}, {"name": "5th floor, first half (1 day)", "start": "2026-10-28", "end": "2026-10-28", "type": "w"}, {"name": "5th floor, second half (1 day)", "start": "2026-10-29", "end": "2026-10-29", "type": "w"}, {"name": "Buffer (10 days)", "start": "2026-10-30", "end": "2026-11-08", "type": "buf"}]}, {"name": "LED lighting: whole building", "status": "Quotations only", "text": "Seven zones, one week each, with a 3-day buffer before the first zone and after the last. Parking first, then RC, then the rest.", "ask": "Approve quote and start material sourcing by 9 Oct.", "tasks": [{"name": "Quotations (in progress)", "start": "2026-09-28", "end": "2026-10-09", "type": "src"}, {"name": "Material sourcing", "start": "2026-10-12", "end": "2026-10-30", "type": "src", "budget": "20000"}, {"name": "Buffer (3 days)", "start": "2026-10-31", "end": "2026-11-02", "type": "buf"}, {"name": "Parking", "start": "2026-11-03", "end": "2026-11-07", "type": "w"}, {"name": "RC", "start": "2026-11-08", "end": "2026-11-12", "type": "w"}, {"name": "3M", "start": "2026-11-13", "end": "2026-11-17", "type": "w"}, {"name": "4th floor", "start": "2026-11-18", "end": "2026-11-22", "type": "w"}, {"name": "5th floor", "start": "2026-11-23", "end": "2026-11-27", "type": "w"}, {"name": "6th floor", "start": "2026-11-28", "end": "2026-12-02", "type": "w"}, {"name": "D1", "start": "2026-12-03", "end": "2026-12-07", "type": "w"}, {"name": "D2", "start": "2026-12-08", "end": "2026-12-12", "type": "w"}, {"name": "Buffer (3 days)", "start": "2026-12-13", "end": "2026-12-15", "type": "buf"}]}]}</script>
 <script>
 "use strict";
 /* ================= basics ================= */
@@ -361,7 +362,7 @@ function normalize(d){
  d=d&&typeof d==="object"?JSON.parse(JSON.stringify(d)):{};
  d.title=d.title??"Project plan";d.subtitle=d.subtitle??"";d.deadline=d.deadline||"";d.deadlineLabel=d.deadlineLabel||"Deadline";d.currency=d.currency??"$";
  d.projects=Array.isArray(d.projects)?d.projects:[];
- d.projects.forEach((p,i)=>{p.id=p.id||uid();for(const k of["name","status","owner","text","ask","askDue"])p[k]=p[k]??"";
+ d.projects.forEach((p,i)=>{p.id=p.id||uid();for(const k of["name","status","owner","text","ask","askDue","deadline"])p[k]=p[k]??"";
   if(p.color==null||isNaN(+p.color))p.color=i%NCOL;
   p.tasks=Array.isArray(p.tasks)?p.tasks:[];
   p.tasks.forEach(t=>{t.id=t.id||uid();t.name=t.name??"";t.start=t.start||"";t.end=t.end||t.start||"";t.type=TYPES[t.type]?t.type:"w";
@@ -374,6 +375,7 @@ function findProj(id){const i=D.projects.findIndex(p=>p.id===id);return i<0?null
 function span(tasks){let a=Infinity,b=-Infinity;tasks.forEach(t=>{const s=validDate(t.start),e=validDate(t.end);if(s!=null&&e!=null&&e>=s){a=Math.min(a,s);b=Math.max(b,e)}});return a===Infinity?null:[a,b]}
 const dur=t=>{const s=validDate(t.start),e=validDate(t.end);return s==null||e==null?0:Math.round((e-s)/DAY)+1};
 function progressOf(tasks){let w=0,d=0;tasks.forEach(t=>{if(t.type==="buf"||t.type==="ms")return;const n=Math.max(1,dur(t));w+=n;d+=n*(+t.progress||0)});return w?d/w:0}
+const projDl=p=>validDate(p.deadline)??validDate(D.deadline); // own deadline, else the plan deadline
 const budgetOf=p=>p.tasks.reduce((x,t)=>x+(+t.budget||0),0);
 const money=v=>(D.currency||"")+Math.round(v).toLocaleString("en-US");
 const plural=(n,w)=>`${n} ${w}${n===1?"":"s"}`;
@@ -437,8 +439,8 @@ function renderKPIs(){
  h+=kpi("Timeline",sp?`${fmt(sp[0])} – ${fmt(sp[1])}`:"—",sp?`${Math.round((sp[1]-sp[0])/DAY/7)} weeks · ends ${fmtY(sp[1])}`:"Add dates to tasks");
  if(dl!=null){const left=Math.round((dl-t0)/DAY);const lab=esc(D.deadlineLabel||"Deadline");
   h+=kpi(lab,fmtY(dl),left>0?`${plural(left,"day")} left`:left===0?"Today":`${plural(-left,"day")} ago`);
-  const late=D.projects.map(p=>({p,s:span(p.tasks)})).filter(x=>x.s&&x.s[1]>dl);
-  if(D.projects.length)h+=kpi(`Done by ${fmt(dl)}`,`${D.projects.length-late.length} of ${D.projects.length}`,late.length?`${esc(late[0].p.name)} ends ${fmt(late[0].s[1])}${late.length>1?` · +${late.length-1} more`:""}`:"Every project finishes in time",late.length?"bad":"ok")}
+  const late=D.projects.map(p=>({p,s:span(p.tasks),d:projDl(p)})).filter(x=>x.s&&x.d!=null&&x.s[1]>x.d);
+  if(D.projects.length)h+=kpi("On time",`${D.projects.length-late.length} of ${D.projects.length}`,late.length?`${esc(late[0].p.name)} ends ${fmt(late[0].s[1])}${late.length>1?` · +${late.length-1} more`:""}`:"Every project meets its deadline",late.length?"bad":"ok")}
  if(bud)h+=kpi("Budget",money(bud),"Total of task budgets");
  $("#kpis").innerHTML=h}
 
@@ -496,7 +498,8 @@ function renderTimeline(rows,lw){
  let body="";
  rows.forEach(r=>{
   if(r.k==="p"){const p=r.p,ps=span(p.tasks),pp=progressOf(p.tasks);
-   body+=`<div class="r r-p" style="--c:${col(p)}">${ps?`<div class="bar sum" data-drag="p" data-pid="${p.id}" style="left:${X(ps[0])}px;width:${(ps[1]-ps[0])/DAY*px+px}px" title="${esc(`${p.name}\n${fmt(ps[0])} – ${fmtY(ps[1])} · ${Math.round(pp)}% complete\nDrag to move the whole project`)}"><i class="pg" style="width:${pp}%"></i></div><span class="sum-l" style="left:${X(ps[1])+px+8}px">${esc(p.name)}</span>`:""}</div>`}
+   const od=validDate(p.deadline);
+   body+=`<div class="r r-p" style="--c:${col(p)}">${od!=null?`<i class="pdl" style="left:${X(od+DAY)}px" title="${esc(`${p.name} deadline: ${fmtY(od)}`)}"></i>`:""}${ps?`<div class="bar sum" data-drag="p" data-pid="${p.id}" style="left:${X(ps[0])}px;width:${(ps[1]-ps[0])/DAY*px+px}px" title="${esc(`${p.name}\n${fmt(ps[0])} – ${fmtY(ps[1])} · ${Math.round(pp)}% complete\nDrag to move the whole project`)}"><i class="pg" style="width:${pp}%"></i></div><span class="sum-l" style="left:${X(ps[1])+px+8}px">${esc(p.name)}</span>`:""}</div>`}
   else if(r.k==="t")body+=`<div class="r r-t" style="--c:${col(r.p)}">${barHTML(r.t,X,px)}</div>`;
   else body+=`<div class="r r-a"></div>`});
  $("#grp").style.width=W+"px";
@@ -513,7 +516,7 @@ function scrollToDate(t){const g=$("#gwrap");g.scrollLeft=Math.max(0,(t-view.S)/
 function dueText(due){const d=Math.round((due-todayUTC())/DAY);return`by ${fmt(due)} · `+(d>1?`in ${d} days`:d===1?"tomorrow":d===0?"today":`${plural(-d,"day")} overdue`)}
 function renderCards(){
  const dl=validDate(D.deadline),t0=todayUTC(),dlab=esc((D.deadlineLabel||"Deadline").toLowerCase());
- $("#cards").innerHTML=D.projects.map(p=>{const s=span(p.tasks),pr=progressOf(p.tasks),b=budgetOf(p),late=s&&dl!=null&&s[1]>dl?Math.round((s[1]-dl)/DAY):0,due=validDate(p.askDue);
+ $("#cards").innerHTML=D.projects.map(p=>{const s=span(p.tasks),pr=progressOf(p.tasks),b=budgetOf(p),pdl=projDl(p),late=s&&pdl!=null&&s[1]>pdl?Math.round((s[1]-pdl)/DAY):0,due=validDate(p.askDue);
   const dcls=due==null?"":due<t0?"bad":due-t0<=7*DAY?"warn":"";
   return`<article class="card" style="--c:${col(p)}" data-pid="${p.id}" tabindex="0" role="button" aria-label="Open ${esc(p.name)} details">
    <div class="card-h"><span class="dot"></span><h3>${esc(p.name||"Untitled project")}</h3>${p.status?`<span class="pill ${tone(p.status)}">${esc(p.status)}</span>`:""}</div>
@@ -521,7 +524,7 @@ function renderCards(){
    <div class="prog"><span class="meter"><i style="width:${pr}%"></i></span>${Math.round(pr)}%</div>
    ${p.text?`<p>${esc(p.text)}</p>`:""}
    ${p.ask?`<div class="ask"><div class="ask-h">Decision needed${due!=null?`<span class="due ${dcls}">${dueText(due)}</span>`:""}</div><p>${esc(p.ask)}</p></div>`:""}
-   <div class="card-f"><span>${b?`Budget <b>${money(b)}</b>`:""}</span>${late?`<span class="pill bad">${plural(late,"day")} after ${dlab}</span>`:s&&dl!=null?`<span class="pill ok">Before ${dlab}</span>`:""}</div></article>`}).join("")
+   <div class="card-f"><span>${b?`Budget <b>${money(b)}</b>`:""}</span>${late?`<span class="pill bad">${plural(late,"day")} late · due ${fmt(pdl)}</span>`:s&&pdl!=null?`<span class="pill ok">On time · due ${fmt(pdl)}</span>`:""}</div></article>`}).join("")
   +`<button class="card add" data-act="addProj">${ic("plus",18)}Add project</button>`}
 
 function renderBudget(){
@@ -578,7 +581,8 @@ function renderDrawer(){
    <div class="g2"><label class="fld">Status<input class="inp" list="stList" ${F("status")} placeholder="e.g. In progress"></label><label class="fld">Owner<input class="inp" ${F("owner")} placeholder="Who leads it"></label></div>
    <label class="fld">Summary<textarea class="inp" rows="3" ${F("text")} placeholder="What the project is and how it runs"></textarea></label>
    <label class="fld">Decision needed<textarea class="inp" rows="3" ${F("ask")} placeholder="What has to be decided, by whom"></textarea></label>
-   <label class="fld">Decision due date<input type="date" class="inp" ${F("askDue")}></label>
+   <div class="g2"><label class="fld">Project deadline<input type="date" class="inp" ${F("deadline")} title="Leave empty to use the plan deadline"></label><label class="fld">Decision due date<input type="date" class="inp" ${F("askDue")}></label></div>
+   <div class="note" style="font-size:12px">Leave the project deadline empty to use the plan deadline${validDate(D.deadline)!=null?` (${fmtY(validDate(D.deadline))})`:""}.</div>
    <div class="note">${plural(p.tasks.length,"task")} · ${Math.round(progressOf(p.tasks))}% complete${budgetOf(p)?` · budget ${money(budgetOf(p))}`:""}</div></div>
    <footer class="dw-f"><button class="btn sm" data-act="pUp">${ic("up",14)}Up</button><button class="btn sm" data-act="pDown">${ic("down",14)}Down</button><button class="btn sm" data-act="pAdd">${ic("plus",14)}Add task</button><button class="btn sm danger" data-act="pDel">${ic("trash",14)}Delete project</button></footer>`}
  else{const F=k=>`data-f="d::${k}"`;
