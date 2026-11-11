@@ -1,11 +1,12 @@
 // App shell, in the Paper Monitor's layout: sticky glass header, side rail, pages.
-import { useCallback, useEffect, useMemo, useRef, useState, type FormEvent } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { NO_FILTERS, owners, type Ctx, type Filters, type Page, type Sel } from "./lib/ctx";
 import { fmtDate, plural, today } from "./lib/model";
 import { usePlan } from "./lib/store";
 import { exportCSV, exportJSON } from "./lib/io";
 import { when } from "./lib/when";
-import { Icon, Modal } from "./components/ui";
+import { Icon } from "./components/ui";
+import SignIn from "./components/SignIn";
 import DetailPanel from "./components/DetailPanel";
 import ImportDialog from "./components/ImportDialog";
 import Overview from "./pages/Overview";
@@ -24,7 +25,7 @@ const TITLES: Record<Page, [string, string]> = {
   milestones: ["Milestones", "Milestones, deadlines and decision dates"],
   facilities: ["Facilities", "The plan, area by area"],
   reports: ["Reports", "Counts, overdue work and budget"],
-  settings: ["Settings", "Your name, the plan, facilities and data"],
+  settings: ["Settings", "Accounts, the plan, facilities and data"],
 };
 const BLOBS = [
   { x: "-8%", y: "-8%", s: 640, c: "#1F6B4F" },
@@ -47,7 +48,8 @@ export default function App() {
   const [toasts, setToasts] = useState<Toast[]>([]);
   const [menu, setMenu] = useState(false);
   const [importing, setImporting] = useState(false);
-  const [naming, setNaming] = useState(false);
+  const [userMenu, setUserMenu] = useState(false);
+  const userRef = useRef<HTMLDivElement>(null);
   const [now, setNow] = useState(today);
   const menuRef = useRef<HTMLDivElement>(null);
 
@@ -76,6 +78,12 @@ export default function App() {
     return () => { document.removeEventListener("mousedown", close); document.removeEventListener("keydown", close); };
   }, [menu]);
   useEffect(() => {
+    if (!userMenu) return;
+    const close = (e: MouseEvent | KeyboardEvent) => { if (e instanceof KeyboardEvent ? e.key === "Escape" : !userRef.current?.contains(e.target as Node)) setUserMenu(false); };
+    document.addEventListener("mousedown", close); document.addEventListener("keydown", close);
+    return () => { document.removeEventListener("mousedown", close); document.removeEventListener("keydown", close); };
+  }, [userMenu]);
+  useEffect(() => {
     const key = (e: KeyboardEvent) => {
       const el = e.target as HTMLElement;
       if (!(e.ctrlKey || e.metaKey) || el.closest("input, textarea, select")) return;
@@ -100,12 +108,24 @@ export default function App() {
       case "pending": case "saving": return { text: "Saving", tone: "" };
       case "error": return { text: "Not saved", tone: "bad" };
       case "conflict": return { text: "Newer version found", tone: "warn" };
-      case "needsName": return { text: "Add your name to save", tone: "warn" };
       default: return { text: store.meta.savedAt ? `Last saved ${when(store.meta.savedAt)}${store.meta.savedBy ? ` by ${store.meta.savedBy}` : ""}` : "Nothing saved yet", tone: "" };
     }
   })();
   const [title, sub] = page === "overview" && plan ? [plan.title, plan.subtitle || "A summary of every project"] : TITLES[page];
   const taskCount = plan ? plan.projects.reduce((n, p) => n + p.tasks.filter((t) => t.type !== "buf").length, 0) : 0;
+
+  if (store.mode === "signin") {
+    return (
+      <div className="relative min-h-screen overflow-clip px-4 pb-10" style={{ background: "var(--bg)" }}>
+        <div aria-hidden="true" className="pointer-events-none absolute inset-0" style={{ opacity: 0.75 }}>
+          {BLOBS.map((b, i) => <div key={i} className="blob" style={{ left: b.x, top: b.y, width: b.s, height: b.s, background: b.c }} />)}
+          <div className="absolute inset-0" style={{ background: "rgba(2,8,8,0.28)" }} />
+        </div>
+        <main className="relative z-[1]"><SignIn store={store} /></main>
+      </div>
+    );
+  }
+  const name = store.me?.name ?? "";
 
   return (
     <div className="relative min-h-screen overflow-clip" style={{ background: "var(--bg)" }}>
@@ -148,10 +168,19 @@ export default function App() {
                 </div>
               )}
             </div>
-            <button type="button" onClick={() => setNaming(true)} aria-label={store.name ? `Signed as ${store.name}. Change your name.` : "Set your name"} title={store.name || "Set your name"}
-              className="grid h-11 w-11 flex-none place-items-center rounded-full border-0 bg-accent text-sm font-bold text-on-accent">
-              {store.name ? initials(store.name) : <Icon name="plus" size={18} />}
-            </button>
+            {name && (
+              <div ref={userRef} className="relative">
+                <button type="button" onClick={() => setUserMenu(!userMenu)} aria-label={`Signed in as ${name}. Open the account menu.`} aria-expanded={userMenu} title={name}
+                  className="grid h-11 w-11 flex-none place-items-center rounded-full border-0 bg-accent text-sm font-bold text-on-accent">{initials(name)}</button>
+                {userMenu && (
+                  <div className="menu-pop" role="menu">
+                    <span className="flex flex-col gap-0.5 px-3 py-2 text-sm font-semibold">{name}<small className="text-xs font-normal text-white/65">{store.me?.admin ? "Administrator" : "Signed in"}</small></span>
+                    <button type="button" role="menuitem" onClick={() => { setUserMenu(false); go("settings"); }}>{store.me?.admin ? "Accounts and settings" : "Settings"}</button>
+                    <button type="button" role="menuitem" onClick={() => { setUserMenu(false); setSel(null); void store.signOut(); }}>Sign out</button>
+                  </div>
+                )}
+              </div>
+            )}
           </div>
         </header>
 
@@ -191,11 +220,6 @@ export default function App() {
                 <button className="btn btn-sm" onClick={() => store.resolve("theirs")}>Load theirs</button>
               </Banner>
             )}
-            {store.save === "needsName" && (
-              <Banner tone="warn" title="Add your name to save your changes" body="Your changes are kept in this browser. They are shared with everyone once you add your name.">
-                <button className="btn btn-sm btn-primary" onClick={() => setNaming(true)}>Add my name</button>
-              </Banner>
-            )}
 
             {!ctx && <Skeleton />}
             {ctx && page === "overview" && <Overview ctx={ctx} />}
@@ -211,7 +235,6 @@ export default function App() {
 
       {ctx && sel && <DetailPanel ctx={ctx} sel={sel} />}
       {ctx && importing && <ImportDialog ctx={ctx} onClose={() => setImporting(false)} />}
-      {naming && <NameDialog name={store.name} onClose={() => setNaming(false)} onSave={(n) => { store.setName(n); setNaming(false); }} />}
       {plan && (
         <>
           <datalist id="facility-list">{plan.facilities.map((f) => <option key={f} value={f} />)}</datalist>
@@ -239,24 +262,6 @@ function Banner({ tone, title, body, children }: { tone: "warn" | "bad"; title: 
       </div>
       <div className="flex flex-wrap gap-2.5">{children}</div>
     </div>
-  );
-}
-
-function NameDialog({ name, onSave, onClose }: { name: string; onSave: (n: string) => void; onClose: () => void }) {
-  const [v, setV] = useState(name);
-  const submit = (e: FormEvent) => { e.preventDefault(); if (v.trim()) onSave(v); };
-  return (
-    <Modal title="Your name" onClose={onClose}
-      footer={<>
-        <button type="button" className="btn" onClick={onClose}>Cancel</button>
-        <button type="submit" form="name-form" className="btn btn-primary" disabled={!v.trim()}>Save</button>
-      </>}>
-      <p className="m-0">Your name is shown next to the changes you save, so everyone can see who changed what.</p>
-      <form id="name-form" onSubmit={submit}>
-        <label htmlFor="name-in" className="sr-only-x">Your name</label>
-        <input id="name-in" className="field" autoFocus value={v} onChange={(e) => setV(e.target.value)} maxLength={60} placeholder="Your name" />
-      </form>
-    </Modal>
   );
 }
 

@@ -6,7 +6,7 @@ import { normalize, type Plan } from "./model";
 const API = "/api/gantt";
 const DRAFT = "gantt:draft";
 const LOCAL = "gantt:local";
-const NAME = "gantt-user"; // same key as the previous version, so names carry over
+const AUTH = "/api/auth";
 const POLL_MS = 20000;
 
 export const ls = {
@@ -17,8 +17,10 @@ export const ls = {
 
 export interface Doc { data: unknown; version: number; savedBy: string | null; savedAt: string | null }
 export interface Meta { version: number; savedBy: string | null; savedAt: string | null }
-export type Mode = "loading" | "shared" | "local";
-export type SaveState = "idle" | "pending" | "saving" | "saved" | "error" | "conflict" | "needsName";
+export type Mode = "loading" | "signin" | "shared" | "local";
+export interface Me { name: string; admin: boolean }
+export interface Account { name: string; admin: boolean; owner: boolean; waiting: boolean; lastSeen: string | null }
+export type SaveState = "idle" | "pending" | "saving" | "saved" | "error" | "conflict";
 export interface HistoryItem { version: number; savedBy: string | null; savedAt: string | null }
 
 export interface Store {
@@ -29,7 +31,7 @@ export interface Store {
   error: string;
   loadError: string;
   conflict: Doc | null;
-  name: string;
+  me: Me | null;
   notice: string;
   canUndo: boolean;
   canRedo: boolean;
@@ -40,7 +42,12 @@ export interface Store {
   retry: () => void;
   reload: () => void;
   resolve: (keep: "mine" | "theirs") => void;
-  setName: (n: string) => void;
+  /** Sign in. Returns "setup" when the account still needs a password, or an error text. */
+  signIn: (name: string, pass: string) => Promise<{ setup?: boolean; error?: string }>;
+  setPassword: (name: string, pass: string, pass2: string) => Promise<{ error?: string }>;
+  signOut: () => Promise<void>;
+  /** Administrator actions on accounts (users, addUser, resetUser, setAdmin, removeUser, activity). */
+  admin: <T = unknown>(action: string, body?: Record<string, unknown>) => Promise<T>;
   clearNotice: () => void;
   history: () => Promise<HistoryItem[]>;
   restore: (version: number) => Promise<void>;
@@ -48,14 +55,14 @@ export interface Store {
 
 interface Inner {
   plan: Plan | null; mode: Mode; meta: Meta; save: SaveState; error: string; loadError: string; conflict: Doc | null;
-  name: string; notice: string; savedSnap: string; undo: string[]; redo: string[]; timer: number; busy: boolean;
+  me: Me | null; notice: string; savedSnap: string; undo: string[]; redo: string[]; timer: number; busy: boolean;
 }
 
 export function usePlan(): Store {
   const [, force] = useReducer((x: number) => x + 1, 0);
   const r = useRef<Inner>({
     plan: null, mode: "loading", meta: { version: 0, savedBy: null, savedAt: null }, save: "idle", error: "", loadError: "", conflict: null,
-    name: ls.get(NAME) ?? "", notice: "", savedSnap: "", undo: [], redo: [], timer: 0, busy: false,
+    me: null, notice: "", savedSnap: "", undo: [], redo: [], timer: 0, busy: false,
   }).current;
 
   const api = useMemo(() => {
@@ -80,7 +87,6 @@ export function usePlan(): Store {
       if (r.mode !== "shared") { r.save = "saved"; force(); return; }
       if (r.conflict) { r.save = "conflict"; force(); return; }
       if (!dirty()) { r.save = "saved"; force(); return; }
-      if (!r.name) { r.save = "needsName"; force(); return; }
       r.save = "pending";
       clearTimeout(r.timer);
       r.timer = window.setTimeout(saveNow, 1200);
@@ -90,16 +96,16 @@ export function usePlan(): Store {
       if (r.mode !== "shared" || !r.plan || r.conflict) return;
       if (r.busy) { clearTimeout(r.timer); r.timer = window.setTimeout(saveNow, 600); return; }
       if (!dirty()) { r.save = "saved"; force(); return; }
-      if (!r.name) { r.save = "needsName"; force(); return; }
       const sent = snap();
       r.busy = true; r.save = "saving"; r.error = ""; force();
       try {
         const res = await fetch(API, {
           method: "POST", headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ data: JSON.parse(sent), baseVersion: r.meta.version, savedBy: r.name, coalesce: true }),
+          body: JSON.stringify({ data: JSON.parse(sent), baseVersion: r.meta.version, coalesce: true }),
         });
         const j = await res.json().catch(() => ({}));
-        if (res.status === 409) { r.conflict = j.doc ?? null; r.save = "conflict"; }
+        if (res.status === 401) { r.mode = "signin"; r.me = null; r.save = "idle"; } // the change stays in this browser until they sign in again
+        else if (res.status === 409) { r.conflict = j.doc ?? null; r.save = "conflict"; }
         else if (!res.ok) throw new Error(j.error || `The server replied ${res.status}`);
         else {
           r.meta = { version: j.version, savedBy: j.savedBy, savedAt: j.savedAt };
@@ -117,8 +123,12 @@ export function usePlan(): Store {
     async function load() {
       r.loadError = ""; r.mode = "loading"; force();
       try {
+        const who = await fetch(AUTH, { cache: "no-store" });
+        if (who.status === 401) { r.mode = "signin"; r.me = null; r.plan = null; force(); return; }
+        if (who.ok) r.me = (await who.json()).me as Me;
         const res = await fetch(API, { cache: "no-store" });
         const j = await res.json().catch(() => ({}));
+        if (res.status === 401) { r.mode = "signin"; r.me = null; r.plan = null; force(); return; }
         if (res.status === 503 || j.configured === false) throw new Error("offline-store");
         if (!res.ok) throw new Error(j.error || `The server replied ${res.status}`);
         r.mode = "shared";
@@ -150,6 +160,7 @@ export function usePlan(): Store {
       if (r.mode !== "shared" || document.hidden || r.busy || r.conflict) return;
       try {
         const res = await fetch(API, { cache: "no-store" });
+        if (res.status === 401 && !dirty()) { r.mode = "signin"; r.me = null; r.plan = null; force(); return; }
         if (!res.ok) return;
         const doc = (await res.json()).doc as Doc | null;
         if (!doc || +doc.version === r.meta.version) return;
@@ -168,6 +179,12 @@ export function usePlan(): Store {
       r.plan = n;
       schedule();
     }
+    const post = async (body: Record<string, unknown>) => {
+      const res = await fetch(AUTH, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
+      const j = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(j.error || `The server replied ${res.status}`);
+      return j;
+    };
     const fetchJson = async (url: string) => {
       const res = await fetch(url, { cache: "no-store" });
       const j = await res.json().catch(() => ({}));
@@ -187,7 +204,16 @@ export function usePlan(): Store {
         if (keep === "theirs") { loadDoc(c); r.notice = "Loaded the latest saved version."; force(); }
         else { r.meta = { ...r.meta, version: +c.version || 0 }; r.conflict = null; schedule(); }
       },
-      setName(n: string) { r.name = n.trim().slice(0, 60); if (r.name) ls.set(NAME, r.name); else ls.del(NAME); schedule(); },
+      async signIn(name: string, pass: string) {
+        try { const j = await post({ action: "login", name, pass }); if (j.setup) return { setup: true }; await load(); return {}; }
+        catch (e) { return { error: e instanceof Error ? e.message : String(e) }; }
+      },
+      async setPassword(name: string, pass: string, pass2: string) {
+        try { await post({ action: "setPassword", name, pass, pass2 }); await load(); return {}; }
+        catch (e) { return { error: e instanceof Error ? e.message : String(e) }; }
+      },
+      async signOut() { try { await post({ action: "logout" }); } catch { /* signed out locally anyway */ } r.me = null; r.plan = null; r.mode = "signin"; force(); },
+      async admin<T>(action: string, body: Record<string, unknown> = {}) { return (await post({ action, ...body })) as T; },
       clearNotice() { r.notice = ""; force(); },
       async history() { return (await fetchJson(API + "?history=1")).items as HistoryItem[]; },
       async restore(version: number) { const j = await fetchJson(`${API}?version=${version}`); commit(normalize(j.doc.data)); },
@@ -207,8 +233,8 @@ export function usePlan(): Store {
 
   return {
     plan: r.plan, mode: r.mode, meta: r.meta, save: r.save, error: r.error, loadError: r.loadError, conflict: r.conflict,
-    name: r.name, notice: r.notice, canUndo: r.undo.length > 0, canRedo: r.redo.length > 0,
+    me: r.me, notice: r.notice, canUndo: r.undo.length > 0, canRedo: r.redo.length > 0,
     update: api.update, replace: api.replace, undo: api.undo, redo: api.redo, retry: api.retry, reload: api.reload,
-    resolve: api.resolve, setName: api.setName, clearNotice: api.clearNotice, history: api.history, restore: api.restore,
+    resolve: api.resolve, signIn: api.signIn, setPassword: api.setPassword, signOut: api.signOut, admin: api.admin, clearNotice: api.clearNotice, history: api.history, restore: api.restore,
   };
 }

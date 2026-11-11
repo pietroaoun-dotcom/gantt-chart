@@ -16,6 +16,18 @@ function devApi(): Plugin {
   return {
     name: "dev-api",
     configureServer(server) {
+      // Stand-in for api/auth.js: always signed in as a test administrator
+      server.middlewares.use("/api/auth", (req, res) => {
+        res.setHeader("Content-Type", "application/json");
+        if (req.method === "GET") return res.end(JSON.stringify({ me: { name: "Test user", admin: true } }));
+        let raw = "";
+        req.on("data", (c) => (raw += c));
+        req.on("end", () => {
+          const a = JSON.parse(raw || "{}").action;
+          res.end(JSON.stringify(a === "users" ? { users: [{ name: "Test user", admin: true, owner: true, waiting: false, lastSeen: new Date().toISOString() }, { name: "New person", admin: false, owner: false, waiting: true, lastSeen: null }] }
+            : a === "activity" ? { items: [{ at: new Date().toISOString(), action: "plan-saved", by: "Test user", version: 6 }] } : { ok: true }));
+        });
+      });
       server.middlewares.use("/api/gantt", (req, res) => {
         const send = (code: number, body: unknown) => {
           res.statusCode = code;
@@ -38,7 +50,7 @@ function devApi(): Plugin {
           const b = JSON.parse(raw || "{}");
           const cur = doc ? doc.version : 0;
           if (Number(b.baseVersion || 0) !== cur) return send(409, { error: "conflict", doc });
-          const next: Doc = { data: b.data, version: cur + 1, savedBy: String(b.savedBy || "Someone"), savedAt: new Date().toISOString() };
+          const next: Doc = { data: b.data, version: cur + 1, savedBy: "Test user", savedAt: new Date().toISOString() };
           const merge = b.coalesce && doc && hist[0]?.version === doc.version && doc.savedBy === next.savedBy && Date.now() - Date.parse(doc.savedAt ?? "") < 600000;
           if (merge) hist[0] = next; else hist.unshift(next);
           doc = next;

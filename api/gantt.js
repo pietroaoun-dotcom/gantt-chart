@@ -14,6 +14,8 @@
 //      -> 200 { ok, version, savedBy, savedAt }
 //      -> 409 { error: "conflict", doc }  when someone else saved since baseVersion
 
+import { whoAmI, log } from './_auth.js';
+
 const URL_ = process.env.KV_REST_API_URL || process.env.UPSTASH_REDIS_REST_URL;
 const TOKEN = process.env.KV_REST_API_TOKEN || process.env.UPSTASH_REDIS_REST_TOKEN;
 const DOC = 'gantt:doc';
@@ -42,7 +44,6 @@ const parse = s => {
 
 export default async function handler(req, res) {
   res.setHeader('Cache-Control', 'no-store');
-  res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET,POST,OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type, X-Edit-Key');
   if (req.method === 'OPTIONS') return res.status(204).end();
@@ -55,6 +56,10 @@ export default async function handler(req, res) {
   }
 
   try {
+    // Everything here needs a signed-in account (see api/auth.js)
+    const me = await whoAmI(req, req.method === 'POST');
+    if (!me) return res.status(401).json({ error: 'Please sign in.' });
+
     if (req.method === 'GET') {
       const q = req.query || {};
 
@@ -107,7 +112,7 @@ export default async function handler(req, res) {
       const doc = {
         data,
         version: curVersion + 1,
-        savedBy: String(body.savedBy || 'Someone').trim().slice(0, 60) || 'Someone',
+        savedBy: me.name,
         savedAt: new Date().toISOString(),
       };
       const s = JSON.stringify(doc);
@@ -120,6 +125,7 @@ export default async function handler(req, res) {
       await redis(sameSession
         ? [['SET', DOC, s], ['LSET', HIST, 0, s]]
         : [['SET', DOC, s], ['LPUSH', HIST, s], ['LTRIM', HIST, 0, KEEP - 1]]);
+      if (!sameSession) await log('plan-saved', me.name, { version: doc.version });
       return res.status(200).json({ ok: true, version: doc.version, savedBy: doc.savedBy, savedAt: doc.savedAt });
     }
 

@@ -5,12 +5,13 @@ import { exportCSV, exportJSON } from "../lib/io";
 import type { HistoryItem } from "../lib/store";
 import { Card, Chip, Empty, Field, Icon } from "../components/ui";
 import { when } from "../lib/when";
+import Accounts from "../components/Accounts";
 
 export default function Settings({ ctx, onImport }: { ctx: Ctx; onImport: () => void }) {
   const { plan, store } = ctx;
   return (
     <div className="grid items-start gap-5" style={{ gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 420px), 1fr))" }}>
-      <NameCard ctx={ctx} />
+      {store.me?.admin && <Accounts ctx={ctx} />}
       <PlanCard key={JSON.stringify([plan.title, plan.subtitle, plan.deadline, plan.deadlineLabel, plan.currency])} ctx={ctx} />
       <FacilitiesCard ctx={ctx} />
       <Card id="st-data" title="Data" sub={store.mode === "shared" ? "Saved on the shared server, for everyone with the link" : "Saved in this browser only"}>
@@ -27,19 +28,6 @@ export default function Settings({ ctx, onImport }: { ctx: Ctx; onImport: () => 
       </Card>
       {store.mode === "shared" && <HistoryCard ctx={ctx} />}
     </div>
-  );
-}
-
-function NameCard({ ctx }: { ctx: Ctx }) {
-  const [name, setName] = useState(ctx.store.name);
-  const save = (e: FormEvent) => { e.preventDefault(); ctx.store.setName(name); ctx.toast(name.trim() ? "Name saved." : "Name cleared."); };
-  return (
-    <Card id="st-name" title="Your name" sub="Shown next to the changes you save">
-      <form onSubmit={save} className="flex flex-wrap items-end gap-2.5">
-        <Field label="Name" className="min-w-[200px] flex-1"><input className="field" value={name} onChange={(e) => setName(e.target.value)} maxLength={60} placeholder="Your name" /></Field>
-        <button type="submit" className="btn btn-primary" disabled={name.trim() === ctx.store.name}>Save name</button>
-      </form>
-    </Card>
   );
 }
 
