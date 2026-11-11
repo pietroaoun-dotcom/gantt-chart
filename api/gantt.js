@@ -21,6 +21,7 @@ const HIST = 'gantt:history';
 const LEGACY = 'gantt-data'; // key used by the first version of this function
 const KEEP = 50;             // saved versions kept in history
 const MAX_BYTES = 1_000_000;
+const COALESCE_MS = 10 * 60 * 1000;
 
 async function redis(commands) {
   const r = await fetch(URL_.replace(/\/$/, '') + '/pipeline', {
@@ -95,8 +96,9 @@ export default async function handler(req, res) {
         return res.status(400).json({ error: 'Expected { data: { projects: [...] } }' });
       }
 
-      const [rawCur] = await redis([['GET', DOC]]);
+      const [rawCur, rawHead] = await redis([['GET', DOC], ['LINDEX', HIST, 0]]);
       const cur = parse(rawCur);
+      const head = parse(rawHead);
       const curVersion = cur ? Number(cur.version) || 0 : 0;
       if (Number(body.baseVersion || 0) !== curVersion) {
         return res.status(409).json({ error: 'conflict', doc: cur });
@@ -111,7 +113,13 @@ export default async function handler(req, res) {
       const s = JSON.stringify(doc);
       if (s.length > MAX_BYTES) return res.status(413).json({ error: 'Chart is too large to save' });
 
-      await redis([['SET', DOC, s], ['LPUSH', HIST, s], ['LTRIM', HIST, 0, KEEP - 1]]);
+      // The app saves after every change. Saves by the same person within 10 minutes replace the
+      // newest history entry instead of adding one, so History keeps 50 sessions, not 50 keystrokes.
+      const sameSession = body.coalesce && cur && head && head.version === cur.version
+        && cur.savedBy === doc.savedBy && Date.now() - Date.parse(cur.savedAt || '') < COALESCE_MS;
+      await redis(sameSession
+        ? [['SET', DOC, s], ['LSET', HIST, 0, s]]
+        : [['SET', DOC, s], ['LPUSH', HIST, s], ['LTRIM', HIST, 0, KEEP - 1]]);
       return res.status(200).json({ ok: true, version: doc.version, savedBy: doc.savedBy, savedAt: doc.savedAt });
     }
 
