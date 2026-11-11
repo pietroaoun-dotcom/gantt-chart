@@ -28,11 +28,11 @@ const TITLES: Record<Page, [string, string]> = {
   settings: ["Settings", "Accounts, the plan, facilities and data"],
 };
 const BLOBS = [
-  { x: "-8%", y: "-8%", s: 640, c: "#1F6B4F" },
-  { x: "55%", y: "-12%", s: 560, c: "#2E8A6E" },
-  { x: "76%", y: "36%", s: 540, c: "#123A33" },
-  { x: "6%", y: "42%", s: 600, c: "#2B6A8F" },
-  { x: "38%", y: "70%", s: 660, c: "#173F4F" },
+  { x: "-8%", y: "-8%", s: 640, c: "#1D4F7A" },
+  { x: "55%", y: "-12%", s: 560, c: "#3B3F9E" },
+  { x: "76%", y: "36%", s: 540, c: "#12304A" },
+  { x: "6%", y: "42%", s: 600, c: "#5B3FA0" },
+  { x: "38%", y: "70%", s: 660, c: "#1B3D5C" },
 ];
 const pageFromHash = (): Page => { const h = location.hash.replace("#", "") as Page; return NAV.some(([p]) => p === h) ? h : "overview"; };
 const initials = (n: string) => n.trim().split(/\s+/).slice(0, 2).map((w) => w[0]?.toUpperCase() ?? "").join("");
@@ -119,7 +119,7 @@ export default function App() {
       <div className="relative min-h-screen overflow-clip px-4 pb-10" style={{ background: "var(--bg)" }}>
         <div aria-hidden="true" className="pointer-events-none absolute inset-0" style={{ opacity: 0.75 }}>
           {BLOBS.map((b, i) => <div key={i} className="blob" style={{ left: b.x, top: b.y, width: b.s, height: b.s, background: b.c }} />)}
-          <div className="absolute inset-0" style={{ background: "rgba(2,8,8,0.28)" }} />
+          <div className="absolute inset-0" style={{ background: "rgba(3,6,14,0.3)" }} />
         </div>
         <main className="relative z-[1]"><SignIn store={store} /></main>
       </div>
@@ -132,12 +132,12 @@ export default function App() {
       {/* quieter behind the timeline, so dense bars stay readable */}
       <div aria-hidden="true" className="pointer-events-none absolute inset-0" style={{ opacity: page === "timeline" ? 0.35 : 0.75, transition: "opacity .4s" }}>
         {BLOBS.map((b, i) => <div key={i} className="blob" style={{ left: b.x, top: b.y, width: b.s, height: b.s, background: b.c }} />)}
-        <div className="absolute inset-0" style={{ background: "rgba(2,8,8,0.28)" }} />
+        <div className="absolute inset-0" style={{ background: "rgba(3,6,14,0.3)" }} />
       </div>
       <a href="#main" className="sr-only-x focus:not-sr-only">Skip to content</a>
 
       <div className="relative z-[1] mx-auto flex max-w-[1680px] flex-col gap-5 px-4 pt-5 pb-10 sm:px-6">
-        <header className="glass sticky top-3 z-[30] flex flex-wrap items-center justify-between gap-3 py-2.5 pr-3 pl-4" style={{ borderRadius: 20, background: "rgba(14,32,28,0.82)" }}>
+        <header className="glass sticky top-3 z-[30] flex flex-wrap items-center justify-between gap-3 py-2.5 pr-3 pl-4" style={{ borderRadius: 20, background: "rgba(13,22,40,0.84)" }}>
           <div className="flex items-center gap-2.5">
             <span className="grid h-9 w-9 place-items-center rounded-xl bg-accent text-on-accent"><Icon name="gantt" size={20} /></span>
             <div className="flex flex-col leading-tight">

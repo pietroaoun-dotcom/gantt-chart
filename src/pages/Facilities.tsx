@@ -44,7 +44,7 @@ export default function Facilities({ ctx }: { ctx: Ctx }) {
               {worst && g.tasks.length > 0 ? <StatusChip status={g.status.late ? "late" : g.status.risk ? "risk" : worst} /> : <span className="chip chip-plain">No tasks</span>}
             </div>
             <div className="flex items-center gap-4">
-              <Ring size={84} r={34} stroke={8} progress={pr / 100} color="#58D68D" label={`${Math.round(pr)}% complete`}>
+              <Ring size={84} r={34} stroke={8} progress={pr / 100} color="#a394ff" label={`${Math.round(pr)}% complete`}>
                 <span className="display num text-lg font-bold">{Math.round(pr)}%</span>
               </Ring>
               <div className="grid flex-1 grid-cols-2 gap-2">

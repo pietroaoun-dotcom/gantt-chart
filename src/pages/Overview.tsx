@@ -51,7 +51,7 @@ export default function Overview({ ctx }: { ctx: Ctx }) {
       <div className="grid gap-4" style={{ gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))" }}>
         <Kpi label="Projects" value={n} chip={<Chip tone="plain">{plural(d.tasks.length, "task")}</Chip>} sub={`${d.count("complete")} complete, ${n - d.count("complete")} open`} />
         <div className="glass flex items-center gap-4 p-[22px]">
-          <Ring size={92} r={38} stroke={9} progress={d.progress / 100} color="#58D68D" label={`${Math.round(d.progress)}% of the plan is complete`}>
+          <Ring size={92} r={38} stroke={9} progress={d.progress / 100} color="#a394ff" label={`${Math.round(d.progress)}% of the plan is complete`}>
             <span className="display num text-xl font-bold">{Math.round(d.progress)}%</span>
           </Ring>
           <div className="flex min-w-0 flex-col gap-1">
@@ -75,7 +75,7 @@ export default function Overview({ ctx }: { ctx: Ctx }) {
         right={<button className="btn btn-sm" onClick={() => ctx.go("timeline")}>Open the timeline<Icon name="arrow" size={15} /></button>}>
         <div className="flex h-3.5 w-full overflow-hidden rounded-full bg-white/10" role="img"
           aria-label={STATUS_ORDER.map((s) => `${STATUS_LABEL[s]}: ${d.count(s)}`).join(", ")}>
-          {STATUS_ORDER.map((s) => d.count(s) > 0 && <span key={s} className="anim-w" style={{ width: pct(d.count(s), n) + "%", background: STATUS_COLOR[s], opacity: s === "complete" ? 0.55 : 1, borderRight: "2px solid #0e1d19" }} />)}
+          {STATUS_ORDER.map((s) => d.count(s) > 0 && <span key={s} className="anim-w" style={{ width: pct(d.count(s), n) + "%", background: STATUS_COLOR[s], opacity: s === "complete" ? 0.55 : 1, borderRight: "2px solid #0e1828" }} />)}
         </div>
         <div className="grid gap-3" style={{ gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))" }}>
           {STATUS_ORDER.map((s) => (
